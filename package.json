@@ -15,6 +15,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@libsql/client": "^0.15.15",
+    "@netlify/plugin-nextjs": "^5.13.3",
     "@paralleldrive/cuid2": "^2.2.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/papaparse": "^5.3.16",
