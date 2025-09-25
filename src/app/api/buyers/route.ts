@@ -5,9 +5,15 @@ import { buyers, users } from '@/db/schema';
 import { eq, and, or, like, desc, asc, count, isNull, gte, lte } from 'drizzle-orm';
 import { searchFiltersSchema } from '@/lib/validations';
 import { z } from 'zod';
+import { initializeDatabase } from '@/db/init';
 
 export async function GET(request: NextRequest) {
   try {
+    // Initialize database if in production
+    if (process.env.NODE_ENV === 'production') {
+      await initializeDatabase();
+    }
+    
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -167,6 +173,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Initialize database if in production
+    if (process.env.NODE_ENV === 'production') {
+      await initializeDatabase();
+    }
+    
     const session = await auth();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
