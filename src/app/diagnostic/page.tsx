@@ -6,9 +6,9 @@ export default async function DiagnosticPage() {
   let diagnostics = {
     authWorking: false,
     databaseWorking: false,
-    session: null,
+    session: null as any,
     userCount: 0,
-    error: null,
+    error: null as string | null,
   };
 
   try {

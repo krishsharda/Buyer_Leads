@@ -1,7 +1,18 @@
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
-  // Simplified homepage without auth for debugging
+export default async function Home() {
+  try {
+    const session = await auth();
+    
+    if (session) {
+      redirect('/buyers');
+    }
+  } catch (error) {
+    console.error('Auth error on homepage:', error);
+    // Continue to show homepage if auth fails
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
