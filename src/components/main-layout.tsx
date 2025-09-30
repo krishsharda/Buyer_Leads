@@ -10,15 +10,29 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
 
-  if (!session) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen hero-section flex items-center justify-center">
         <div className="glass-card p-8 rounded-xl text-center">
           <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
           <div className="text-white text-lg font-medium">Loading your dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated' || !session) {
+    // Redirect to sign in will be handled by the page component
+    return (
+      <div className="min-h-screen hero-section flex items-center justify-center">
+        <div className="glass-card p-8 rounded-xl text-center">
+          <div className="text-white text-lg font-medium">Please sign in to continue...</div>
+          <Link href="/auth/signin" className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            Sign In
+          </Link>
         </div>
       </div>
     );

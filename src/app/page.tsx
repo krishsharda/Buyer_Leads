@@ -3,10 +3,15 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function Home() {
-  const session = await auth();
-  
-  if (session) {
-    redirect('/buyers');
+  try {
+    const session = await auth();
+    
+    if (session) {
+      redirect('/buyers');
+    }
+  } catch (error) {
+    console.error('Auth error on homepage:', error);
+    // Continue to show homepage if auth fails
   }
 
   return (
