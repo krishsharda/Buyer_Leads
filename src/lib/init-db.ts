@@ -1,33 +1,60 @@
-import { db } from '@/db';
-import { users, buyers } from '@/db/schema';
-import { migrate } from 'drizzle-orm/libsql/migrator';
+import { createClient } from '@libsql/client';
 
 export async function initDatabase() {
   try {
-    console.log('Initializing database...');
+    console.log('Initializing database with direct SQL...');
     
-    // Run migrations to create tables
-    await migrate(db, { migrationsFolder: './drizzle' });
+    const client = createClient({
+      url: process.env.DATABASE_URL || 'file:./sqlite.db',
+    });
     
-    console.log('Database initialized successfully');
+    // Create users table directly with SQL
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+        email TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        isAdmin INTEGER DEFAULT 0,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create buyers table directly with SQL  
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS buyers (
+        id TEXT PRIMARY KEY DEFAULT (hex(randomblob(16))),
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
+        city TEXT NOT NULL,
+        propertyType TEXT NOT NULL,
+        bhk TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        budgetMin INTEGER NOT NULL,
+        budgetMax INTEGER NOT NULL,
+        timeline TEXT NOT NULL,
+        source TEXT NOT NULL,
+        status TEXT DEFAULT 'active',
+        notes TEXT,
+        userId TEXT NOT NULL,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (userId) REFERENCES users(id)
+      )
+    `);
+    
+    console.log('Database tables created successfully');
+    
+    // Test database by trying to query users table
+    const result = await client.execute('SELECT COUNT(*) as count FROM users');
+    console.log('Database test successful, user count:', result.rows[0]);
+    
+    client.close();
     return true;
   } catch (error) {
     console.error('Database initialization failed:', error);
-    
-    // If migration fails, try to create tables manually
-    try {
-      console.log('Trying manual table creation...');
-      
-      // This will create tables if they don't exist
-      await db.select().from(users).limit(1).catch(() => {});
-      await db.select().from(buyers).limit(1).catch(() => {});
-      
-      console.log('Manual table creation completed');
-      return true;
-    } catch (manualError) {
-      console.error('Manual table creation also failed:', manualError);
-      return false;
-    }
+    return false;
   }
 }
 
