@@ -51,6 +51,8 @@ export const buyers = sqliteTable('buyers', {
   status: text('status', { enum: statusEnum }).default('New').notNull(),
   notes: text('notes'),
   tags: text('tags', { mode: 'json' }).$type<string[]>().default(sql`'[]'`),
+  profileImage: text('profile_image'),
+  documents: text('documents', { mode: 'json' }).$type<string[]>().default(sql`'[]'`),
   ownerId: text('owner_id').notNull().references(() => users.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
