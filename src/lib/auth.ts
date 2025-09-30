@@ -93,9 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: 'jwt',
   },
-  // Auto-detect production URL for Railway
-  ...(process.env.NODE_ENV === 'production' && process.env.RAILWAY_PUBLIC_DOMAIN && {
-    trustHost: true,
-  }),
+  // Trust host in production
+  trustHost: true,
   debug: process.env.NODE_ENV === 'development',
 });
