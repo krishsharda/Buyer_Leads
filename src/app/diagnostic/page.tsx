@@ -56,6 +56,11 @@ export default async function DiagnosticPage() {
           </div>
           
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+            <span>Railway Domain:</span>
+            <span className="font-mono text-sm">{process.env.RAILWAY_PUBLIC_DOMAIN || 'Not set'}</span>
+          </div>
+          
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
             <span>Auth Working:</span>
             <span className={`px-2 py-1 rounded text-sm ${diagnostics.authWorking ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
               {diagnostics.authWorking ? 'Yes' : 'No'}
