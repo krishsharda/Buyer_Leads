@@ -10,7 +10,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  outputFileTracingRoot: __dirname,
+  // Railway-optimized configuration
+  serverExternalPackages: ['pg', 'postgres']
 };
 
 export default nextConfig;

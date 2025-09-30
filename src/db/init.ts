@@ -1,4 +1,5 @@
-import { db, client } from './index';
+import { db } from './index';
+import { sql } from 'drizzle-orm';
 
 let isInitialized = false;
 
@@ -8,19 +9,19 @@ export async function initializeDatabase() {
   try {
     console.log('🔧 Initializing database...');
     
-    // For production in-memory database, create tables manually
+    // Create tables for production PostgreSQL
     if (process.env.NODE_ENV === 'production') {
-      await client.execute(`
+      await db.execute(sql`
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
           email TEXT NOT NULL UNIQUE,
           name TEXT NOT NULL,
           is_admin INTEGER DEFAULT 0 NOT NULL,
-          created_at INTEGER DEFAULT (unixepoch()) NOT NULL
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
         )
       `);
       
-      await client.execute(`
+      await db.execute(sql`
         CREATE TABLE IF NOT EXISTS buyers (
           id TEXT PRIMARY KEY,
           full_name TEXT NOT NULL,
@@ -38,8 +39,8 @@ export async function initializeDatabase() {
           notes TEXT,
           tags TEXT DEFAULT '[]',
           owner_id TEXT NOT NULL,
-          created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
-          updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
         )
       `);
     }
