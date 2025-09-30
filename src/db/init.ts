@@ -1,5 +1,6 @@
 import { db } from './index';
-import { sql } from 'drizzle-orm';
+import { users, buyers } from './schema';
+import { createId } from '@paralleldrive/cuid2';
 
 let isInitialized = false;
 
@@ -9,40 +10,50 @@ export async function initializeDatabase() {
   try {
     console.log('🔧 Initializing database...');
     
-    // Create tables for production PostgreSQL
+    // For production, create some demo data since we're using in-memory database
     if (process.env.NODE_ENV === 'production') {
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS users (
-          id TEXT PRIMARY KEY,
-          email TEXT NOT NULL UNIQUE,
-          name TEXT NOT NULL,
-          is_admin INTEGER DEFAULT 0 NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-        )
-      `);
-      
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS buyers (
-          id TEXT PRIMARY KEY,
-          full_name TEXT NOT NULL,
-          email TEXT,
-          phone TEXT NOT NULL,
-          city TEXT NOT NULL,
-          property_type TEXT NOT NULL,
-          bhk TEXT,
-          purpose TEXT NOT NULL,
-          budget_min INTEGER,
-          budget_max INTEGER,
-          timeline TEXT NOT NULL,
-          source TEXT NOT NULL,
-          status TEXT DEFAULT 'New' NOT NULL,
-          notes TEXT,
-          tags TEXT DEFAULT '[]',
-          owner_id TEXT NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-        )
-      `);
+      try {
+        // Create demo users
+        await db.insert(users).values([
+          {
+            id: 'demo-admin-id',
+            email: 'admin@example.com',
+            name: 'Admin User',
+            isAdmin: true,
+          },
+          {
+            id: 'demo-user-id',
+            email: 'demo@example.com', 
+            name: 'Demo User',
+            isAdmin: false,
+          }
+        ]).onConflictDoNothing();
+
+        // Create a demo buyer
+        await db.insert(buyers).values([
+          {
+            id: createId(),
+            fullName: 'John Smith',
+            email: 'john.smith@example.com',
+            phone: '+91-9876543210',
+            city: 'Chandigarh',
+            propertyType: 'Apartment',
+            bhk: '2',
+            purpose: 'Buy',
+            budgetMin: 4000000,
+            budgetMax: 6000000,
+            timeline: '3-6m',
+            source: 'Walk-in',
+            status: 'New',
+            notes: 'Looking for a modern apartment in Chandigarh. Flexible on move-in date.',
+            ownerId: 'demo-admin-id',
+          }
+        ]).onConflictDoNothing();
+        
+        console.log('✅ Demo data created successfully');
+      } catch (insertError) {
+        console.log('Demo data might already exist, continuing...');
+      }
     }
 
     isInitialized = true;
