@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { auth } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/custom-auth';
 import { redirect } from 'next/navigation';
 
 export default async function Home() {
   try {
-    const session = await auth();
+    const user = await getCurrentUser();
     
-    if (session) {
+    if (user) {
       redirect('/buyers');
     }
   } catch (error) {
@@ -28,7 +28,7 @@ export default async function Home() {
           
           <div className="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
             <Link 
-              href="/auth/signin"
+              href="/simple-signin"
               className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
             >
               Get Started →
