@@ -29,52 +29,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          console.log('=== AUTH ATTEMPT START ===');
-          console.log('Credentials received:', { email: credentials?.email, hasCredentials: !!credentials });
+          // Initialize database first
+          await initDatabase();
           
-          if (!credentials?.email) {
-            console.error('❌ No email provided in credentials');
-            return null;
-          }
-
-          let email: string;
-          try {
-            const parsed = loginSchema.parse(credentials);
-            email = parsed.email;
-            console.log('✅ Email validation passed:', email);
-          } catch (validationError) {
-            console.error('❌ Email validation failed:', validationError);
-            return null;
-          }
+          const { email } = loginSchema.parse(credentials);
           
-          // Ensure database is initialized
-          console.log('🔄 Initializing database...');
-          const initResult = await initDatabase();
-          if (!initResult) {
-            console.error('❌ Database initialization failed');
-            return null;
-          }
-          console.log('✅ Database initialized successfully');
-          
-          // Find existing user
-          let user;
-          try {
-            console.log('🔍 Searching for existing user...');
-            const result = await db
-              .select()
-              .from(users)
-              .where(eq(users.email, email))
-              .limit(1);
-            
-            user = result[0];
-            console.log('🔍 User search result:', { found: !!user, email });
-          } catch (dbError) {
-            console.error('❌ Database query failed:', dbError);
-            return null;
-          }
+          // Find user in database
+          const [user] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
 
           if (user) {
-            console.log('✅ Returning existing user:', user.id);
             return {
               id: user.id,
               email: user.email,
@@ -83,34 +50,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             };
           }
 
-          // Create new user
-          console.log('👤 Creating new user for email:', email);
-          try {
-            const [newUser] = await db
-              .insert(users)
-              .values({
-                email,
-                name: email.split('@')[0], // Use part before @ as name
-                isAdmin: false,
-              })
-              .returning();
+          // For demo purposes, create new users on the fly
+          const [newUser] = await db
+            .insert(users)
+            .values({
+              email,
+              name: email.split('@')[0], // Use part before @ as name
+              isAdmin: false,
+            })
+            .returning();
 
-            console.log('✅ New user created successfully:', { id: newUser.id, email: newUser.email });
-            return {
-              id: newUser.id,
-              email: newUser.email,
-              name: newUser.name,
-              isAdmin: newUser.isAdmin,
-            };
-          } catch (insertError) {
-            console.error('❌ User creation failed:', insertError);
-            return null;
-          }
+          return {
+            id: newUser.id,
+            email: newUser.email,
+            name: newUser.name,
+            isAdmin: newUser.isAdmin,
+          };
         } catch (error) {
-          console.error('❌ Authentication error:', error);
+          console.error('Authentication error:', error);
           return null;
-        } finally {
-          console.log('=== AUTH ATTEMPT END ===');
         }
       },
     }),
