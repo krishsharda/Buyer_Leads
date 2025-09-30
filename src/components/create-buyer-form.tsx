@@ -72,7 +72,7 @@ export function CreateBuyerForm() {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg">
+    <div className="dashboard-card rounded-lg">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
         {submitError && (
           <div className="rounded-md bg-red-50 p-4" role="alert">

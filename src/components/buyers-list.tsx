@@ -166,7 +166,7 @@ export function BuyersList({ searchParams }: { searchParams: any }) {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white shadow rounded-lg p-6 space-y-4">
+      <div className="dashboard-card rounded-lg p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div>
@@ -271,7 +271,7 @@ export function BuyersList({ searchParams }: { searchParams: any }) {
       </div>
 
       {/* Buyers Table */}
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+      <div className="data-table overflow-hidden sm:rounded-md">
         {buyers.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-sm text-gray-500">No buyers found matching your criteria.</p>
