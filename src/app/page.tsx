@@ -3,16 +3,17 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export default async function Home() {
-  try {
-    const session = await auth();
-    
-    if (session) {
-      redirect('/buyers');
-    }
-  } catch (error) {
-    console.error('Auth error on homepage:', error);
-    // Continue to show homepage if auth fails
-  }
+  // Disable automatic redirect for now to ensure homepage works
+  // try {
+  //   const session = await auth();
+  //   
+  //   if (session) {
+  //     redirect('/buyers');
+  //   }
+  // } catch (error) {
+  //   console.error('Auth error on homepage:', error);
+  //   // Continue to show homepage if auth fails
+  // }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -84,6 +85,14 @@ export default async function Home() {
           <p className="text-sm text-gray-500">
             Built with Next.js 15, SQLite, and deployed on Railway
           </p>
+          <div className="mt-4">
+            <Link 
+              href="/diagnostic" 
+              className="text-blue-600 hover:text-blue-800 text-sm underline"
+            >
+              🔧 Diagnostic Page (Debug)
+            </Link>
+          </div>
         </div>
       </div>
     </div>
