@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
-import { buyers, users } from '@/db/schema';
+import { buyers, users, buyerHistory } from '@/db/schema';
 import { eq, and, or, like, desc, asc, count, isNull, gte, lte } from 'drizzle-orm';
-import { searchFiltersSchema } from '@/lib/validations';
+import { searchFiltersSchema, createBuyerSchema } from '@/lib/validations';
 import { z } from 'zod';
 import { initializeDatabase } from '@/db/init';
 
@@ -184,10 +184,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('Received buyer data:', body);
     
     // Validate the buyer data
-    const { createBuyerSchema } = await import('@/lib/validations');
     const validatedData = createBuyerSchema.parse(body);
+    console.log('Validated buyer data:', validatedData);
 
     // Create the buyer
     const [newBuyer] = await db
@@ -200,8 +201,9 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
+    console.log('Created buyer:', newBuyer);
+
     // Log the creation in buyer history
-    const { buyerHistory } = await import('@/db/schema');
     await db.insert(buyerHistory).values({
       buyerId: newBuyer.id,
       changedBy: session.user.id,
@@ -216,6 +218,7 @@ export async function POST(request: NextRequest) {
     console.error('Error creating buyer:', error);
     
     if (error instanceof z.ZodError) {
+      console.error('Validation errors:', error.issues);
       return NextResponse.json(
         { error: 'Validation failed', details: error.issues },
         { status: 400 }
@@ -223,7 +226,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
