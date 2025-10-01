@@ -45,7 +45,7 @@ export function CreateBuyerForm() {
       
       console.log('Sending buyer data:', requestData);
 
-      const response = await fetch('/api/debug', {
+      const response = await fetch('/api/buyers-bulletproof', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,8 +64,12 @@ export function CreateBuyerForm() {
       const result = await response.json();
       console.log('Response from server:', result);
       
-      // Show success message instead of redirect for debugging
-      alert('Success! Check console for details.');
+      if (result.success && result.buyer) {
+        // Redirect to buyer detail page
+        router.push(`/buyers/${result.buyer.id}`);
+      } else {
+        throw new Error(result.message || 'Unknown error');
+      }
     } catch (error) {
       console.error('Error creating buyer:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create buyer');
