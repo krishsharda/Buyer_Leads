@@ -38,15 +38,19 @@ export function CreateBuyerForm() {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const response = await fetch('/api/buyers-new', {
+      const requestData = {
+        ...data,
+        tags: data.tags || [],
+      };
+      
+      console.log('Sending buyer data:', requestData);
+
+      const response = await fetch('/api/debug', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...data,
-          tags: data.tags || [],
-        }),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
@@ -57,10 +61,11 @@ export function CreateBuyerForm() {
         throw new Error(errorData.error || 'Failed to create buyer');
       }
 
-      const newBuyer = await response.json();
+      const result = await response.json();
+      console.log('Response from server:', result);
       
-      // Redirect to the buyer detail page
-      router.push(`/buyers/${newBuyer.id}`);
+      // Show success message instead of redirect for debugging
+      alert('Success! Check console for details.');
     } catch (error) {
       console.error('Error creating buyer:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create buyer');
