@@ -185,16 +185,28 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Ultra-simple buyer creation - just make it work!
+  // Ultra-simple buyer creation with detailed logging
   try {
+    console.log('=== BUYER CREATION START ===');
+    
+    // Step 1: Check authentication
+    console.log('Step 1: Checking authentication...');
     const session = await auth();
+    console.log('Session result:', session ? `User ID: ${session.user?.id}` : 'No session');
+    
     if (!session?.user?.id) {
+      console.log('❌ Authentication failed');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
+    console.log('✅ Authentication successful');
 
+    // Step 2: Parse request body
+    console.log('Step 2: Parsing request body...');
     const body = await request.json();
+    console.log('Request body:', JSON.stringify(body, null, 2));
     
-    // Create with minimal, safe data - no complex validation
+    // Step 3: Prepare buyer data
+    console.log('Step 3: Preparing buyer data...');
     const buyerData = {
       fullName: body.fullName || 'New Buyer',
       email: body.email || null,
@@ -214,17 +226,34 @@ export async function POST(request: NextRequest) {
       documents: [],
       ownerId: session.user.id,
     };
+    console.log('Buyer data prepared:', JSON.stringify(buyerData, null, 2));
 
+    // Step 4: Database insertion
+    console.log('Step 4: Inserting into database...');
     const [newBuyer] = await db
       .insert(buyers)
       .values(buyerData)
       .returning();
+    
+    console.log('✅ Database insertion successful');
+    console.log('New buyer created:', JSON.stringify(newBuyer, null, 2));
+    console.log('=== BUYER CREATION SUCCESS ===');
 
     return NextResponse.json(newBuyer, { status: 201 });
 
   } catch (error) {
+    console.error('=== BUYER CREATION FAILED ===');
+    console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    
     return NextResponse.json(
-      { error: 'Failed to create buyer', details: error instanceof Error ? error.message : 'Unknown' },
+      { 
+        error: 'Failed to create buyer', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error instanceof Error ? error.constructor.name : typeof error
+      },
       { status: 500 }
     );
   }
