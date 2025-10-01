@@ -5,13 +5,13 @@ import { buyers, users, buyerHistory } from '@/db/schema';
 import { eq, and, or, like, desc, asc, count, isNull, gte, lte } from 'drizzle-orm';
 import { searchFiltersSchema, createBuyerSchema } from '@/lib/validations';
 import { z } from 'zod';
-import { initializeDatabase } from '@/db/init';
+import { initDatabase } from '@/lib/init-db';
 
 export async function GET(request: NextRequest) {
   try {
     // Initialize database if in production
     if (process.env.NODE_ENV === 'production') {
-      await initializeDatabase();
+      await initDatabase();
     }
     
     const session = await auth();
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     // Initialize database if in production
     if (process.env.NODE_ENV === 'production') {
       console.log('Initializing database for production...');
-      await initializeDatabase();
+      await initDatabase();
     }
     
     console.log('Getting session...');
