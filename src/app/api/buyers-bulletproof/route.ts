@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
-import { buyers } from '@/db/schema';
+import { buyers, type NewBuyer } from '@/db/schema';
 import { createId } from '@paralleldrive/cuid2';
 
 // Helper function to clean budget values
@@ -53,28 +53,25 @@ export async function POST(request: NextRequest) {
 
     console.log('Cleaned data:', JSON.stringify(cleanData, null, 2));
 
-    // Create buyer with explicit field mapping
-    const buyerData = {
-      id: createId(),
+    // Create buyer with proper schema types
+    const buyerData: NewBuyer = {
       fullName: cleanData.fullName,
       email: cleanData.email,
       phone: cleanData.phone,
-      city: cleanData.city,
-      propertyType: cleanData.propertyType,
-      bhk: cleanData.bhk,
-      purpose: cleanData.purpose,
+      city: cleanData.city as 'Chandigarh' | 'Mohali' | 'Zirakpur' | 'Panchkula' | 'Other',
+      propertyType: cleanData.propertyType as 'Apartment' | 'Villa' | 'Plot' | 'Office' | 'Retail',
+      bhk: cleanData.bhk as '1' | '2' | '3' | '4' | 'Studio' | null,
+      purpose: cleanData.purpose as 'Buy' | 'Rent',
       budgetMin: cleanData.budgetMin,
       budgetMax: cleanData.budgetMax,
-      timeline: cleanData.timeline,
-      source: cleanData.source,
-      status: cleanData.status,
+      timeline: cleanData.timeline as '0-3m' | '3-6m' | '>6m' | 'Exploring',
+      source: cleanData.source as 'Website' | 'Referral' | 'Walk-in' | 'Call' | 'Other',
+      status: cleanData.status as 'New' | 'Qualified' | 'Contacted' | 'Visited' | 'Negotiation' | 'Converted' | 'Dropped',
       notes: cleanData.notes,
-      tags: [], // Always empty array
+      tags: [],
       profileImage: null,
       documents: [],
       ownerId: session.user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
 
     console.log('Database insert data:', JSON.stringify(buyerData, null, 2));

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
-import { buyers } from '@/db/schema';
+import { buyers, type NewBuyer } from '@/db/schema';
 import { createId } from '@paralleldrive/cuid2';
 
 export async function POST(request: NextRequest) {
@@ -18,28 +18,25 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Request body:', body);
 
-    // Create buyer with minimal validation
-    const buyerData = {
-      id: createId(),
+    // Create buyer with minimal validation and proper types
+    const buyerData: NewBuyer = {
       fullName: body.fullName || 'Test User',
       email: body.email || null,
       phone: body.phone || '1234567890',
-      city: body.city || 'Chandigarh',
-      propertyType: body.propertyType || 'Apartment',
-      bhk: body.bhk || '2',
-      purpose: body.purpose || 'Buy',
+      city: (body.city || 'Chandigarh') as 'Chandigarh' | 'Mohali' | 'Zirakpur' | 'Panchkula' | 'Other',
+      propertyType: (body.propertyType || 'Apartment') as 'Apartment' | 'Villa' | 'Plot' | 'Office' | 'Retail',
+      bhk: (body.bhk || '2') as '1' | '2' | '3' | '4' | 'Studio' | null,
+      purpose: (body.purpose || 'Buy') as 'Buy' | 'Rent',
       budgetMin: body.budgetMin || null,
       budgetMax: body.budgetMax || null,
-      timeline: body.timeline || '3-6m',
-      source: body.source || 'Website',
-      status: 'New',
+      timeline: (body.timeline || '3-6m') as '0-3m' | '3-6m' | '>6m' | 'Exploring',
+      source: (body.source || 'Website') as 'Website' | 'Referral' | 'Walk-in' | 'Call' | 'Other',
+      status: 'New' as 'New' | 'Qualified' | 'Contacted' | 'Visited' | 'Negotiation' | 'Converted' | 'Dropped',
       notes: body.notes || null,
       tags: [],
       profileImage: null,
       documents: [],
       ownerId: session.user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     };
 
     console.log('Buyer data to insert:', buyerData);
