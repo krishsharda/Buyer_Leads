@@ -51,6 +51,9 @@ export function CreateBuyerForm() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('API Error Response:', errorData);
+        console.error('Response status:', response.status);
+        console.error('Response statusText:', response.statusText);
         throw new Error(errorData.error || 'Failed to create buyer');
       }
 

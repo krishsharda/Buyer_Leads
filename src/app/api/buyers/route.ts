@@ -173,37 +173,52 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/buyers called');
+    
     // Initialize database if in production
     if (process.env.NODE_ENV === 'production') {
+      console.log('Initializing database for production...');
       await initializeDatabase();
     }
     
+    console.log('Getting session...');
     const session = await auth();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    console.log('Session result:', session);
+    
+    if (!session || !session.user || !session.user.id) {
+      console.log('Session validation failed:', session);
+      return NextResponse.json({ error: 'Unauthorized - No valid session' }, { status: 401 });
     }
 
+    console.log('Reading request body...');
     const body = await request.json();
-    console.log('Received buyer data:', body);
+    console.log('Received buyer data:', JSON.stringify(body, null, 2));
     
     // Validate the buyer data
+    console.log('Validating buyer data...');
     const validatedData = createBuyerSchema.parse(body);
-    console.log('Validated buyer data:', validatedData);
+    console.log('Validated buyer data:', JSON.stringify(validatedData, null, 2));
+
+    // Prepare buyer data for insertion
+    const buyerData = {
+      ...validatedData,
+      ownerId: session.user.id,
+      status: validatedData.status || 'New',
+      tags: validatedData.tags || [],
+    };
+    console.log('Buyer data for insertion:', JSON.stringify(buyerData, null, 2));
 
     // Create the buyer
+    console.log('Inserting buyer into database...');
     const [newBuyer] = await db
       .insert(buyers)
-      .values({
-        ...validatedData,
-        ownerId: session.user.id,
-        status: validatedData.status || 'New',
-        tags: validatedData.tags || [],
-      })
+      .values(buyerData)
       .returning();
 
-    console.log('Created buyer:', newBuyer);
+    console.log('Created buyer:', JSON.stringify(newBuyer, null, 2));
 
     // Log the creation in buyer history
+    console.log('Creating buyer history entry...');
     await db.insert(buyerHistory).values({
       buyerId: newBuyer.id,
       changedBy: session.user.id,
@@ -212,10 +227,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('Buyer creation completed successfully');
     return NextResponse.json(newBuyer, { status: 201 });
 
   } catch (error) {
     console.error('Error creating buyer:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     if (error instanceof z.ZodError) {
       console.error('Validation errors:', error.issues);
@@ -226,7 +243,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Internal server error', 
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500 }
     );
   }
