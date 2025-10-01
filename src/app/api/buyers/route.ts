@@ -7,6 +7,19 @@ import { searchFiltersSchema, createBuyerSchema } from '@/lib/validations';
 import { z } from 'zod';
 import { initDatabase } from '@/lib/init-db';
 
+// Helper function to clean budget values
+function cleanBudgetValue(value: any): number | null {
+  if (!value) return null;
+  
+  // Convert to string and remove currency symbols, commas, spaces
+  const cleanValue = String(value)
+    .replace(/[₹$,\s]/g, '')
+    .replace(/[^\d.]/g, '');
+  
+  const numValue = parseFloat(cleanValue);
+  return isNaN(numValue) ? null : numValue;
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Initialize database if in production
@@ -194,9 +207,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Received buyer data:', JSON.stringify(body, null, 2));
     
+    // Clean budget values before validation
+    const cleanBody = {
+      ...body,
+      budgetMin: cleanBudgetValue(body.budgetMin),
+      budgetMax: cleanBudgetValue(body.budgetMax),
+    };
+    console.log('Cleaned buyer data:', JSON.stringify(cleanBody, null, 2));
+    
     // Validate the buyer data
     console.log('Validating buyer data...');
-    const validatedData = createBuyerSchema.parse(body);
+    const validatedData = createBuyerSchema.parse(cleanBody);
     console.log('Validated buyer data:', JSON.stringify(validatedData, null, 2));
 
     // Prepare buyer data for insertion
