@@ -38,7 +38,7 @@ export function CreateBuyerForm() {
       setIsSubmitting(true);
       setSubmitError(null);
 
-      const response = await fetch('/api/buyers', {
+      const response = await fetch('/api/buyers-new', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
