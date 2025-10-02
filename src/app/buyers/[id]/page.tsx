@@ -13,61 +13,69 @@ interface BuyerPageProps {
 }
 
 export default async function BuyerPage({ params, searchParams }: BuyerPageProps) {
-  const session = await auth();
-  if (!session) {
-    redirect('/auth/signin');
-  }
+  try {
+    const session = await auth();
+    if (!session) {
+      redirect('/auth/signin');
+    }
 
-  const { id } = await params;
-  const { edit } = await searchParams;
-  
-  console.log(' Looking for buyer with ID:', id);
-  
-  // STATIC SOLUTION: Get buyer from in-memory store
-  const { getBuyerById, getAllBuyers } = await import('@/lib/buyers-store');
-  const storedBuyer = getBuyerById(id);
-  
-  // Debug logging
-  const allBuyers = getAllBuyers();
-  console.log('📊 Available buyers:', allBuyers.map(b => ({ id: b.id, name: b.fullName })));
-  console.log('🎯 Found buyer:', storedBuyer ? storedBuyer.fullName : 'NOT FOUND');
+    const { id } = await params;
+    const { edit } = await searchParams;
+    
+    console.log('🔍 Looking for buyer with ID:', id);
+    
+    // STATIC SOLUTION: Get buyer from in-memory store with error handling
+    let storedBuyer;
+    let allBuyers = [];
+    
+    try {
+      const { getBuyerById, getAllBuyers } = await import('@/lib/buyers-store');
+      storedBuyer = getBuyerById(id);
+      allBuyers = getAllBuyers();
+      
+      console.log('📊 Available buyers:', allBuyers.map(b => ({ id: b.id, name: b.fullName })));
+      console.log('🎯 Found buyer:', storedBuyer ? storedBuyer.fullName : 'NOT FOUND');
+    } catch (storeError) {
+      console.error('❌ Error accessing buyers store:', storeError);
+      notFound();
+    }
 
-  if (!storedBuyer) {
-    console.log('❌ Buyer not found, calling notFound()');
-    notFound();
-  }
+    if (!storedBuyer) {
+      console.log('❌ Buyer not found, calling notFound()');
+      notFound();
+    }
 
-  // Format buyer to match expected structure
-  const buyer = {
-    id: storedBuyer.id,
-    fullName: storedBuyer.fullName,
-    email: storedBuyer.email,
-    phone: storedBuyer.phone,
-    city: storedBuyer.city,
-    propertyType: storedBuyer.propertyType,
-    bhk: storedBuyer.bhk,
-    purpose: storedBuyer.purpose,
-    budgetMin: storedBuyer.budgetMin,
-    budgetMax: storedBuyer.budgetMax,
-    timeline: storedBuyer.timeline,
-    source: storedBuyer.source,
-    status: storedBuyer.status,
-    notes: storedBuyer.notes,
-    tags: storedBuyer.tags,
-    createdAt: new Date(storedBuyer.createdAt * 1000), // Convert Unix timestamp to Date
-    updatedAt: new Date(storedBuyer.updatedAt * 1000), // Convert Unix timestamp to Date
-    owner: {
-      id: session.user.id,
-      name: session.user.name,
-      email: session.user.email,
-    },
-  };
+    // Safely format buyer to match expected structure
+    const buyer = {
+      id: storedBuyer.id || 'unknown',
+      fullName: storedBuyer.fullName || 'Unknown Buyer',
+      email: storedBuyer.email || null,
+      phone: storedBuyer.phone || 'N/A',
+      city: storedBuyer.city || 'N/A',
+      propertyType: storedBuyer.propertyType || 'N/A',
+      bhk: storedBuyer.bhk || 'N/A',
+      purpose: storedBuyer.purpose || 'N/A',
+      budgetMin: storedBuyer.budgetMin || 0,
+      budgetMax: storedBuyer.budgetMax || 0,
+      timeline: storedBuyer.timeline || 'N/A',
+      source: storedBuyer.source || 'N/A',
+      status: storedBuyer.status || 'New',
+      notes: storedBuyer.notes || null,
+      tags: Array.isArray(storedBuyer.tags) ? storedBuyer.tags : [],
+      createdAt: storedBuyer.createdAt ? new Date(storedBuyer.createdAt * 1000) : new Date(),
+      updatedAt: storedBuyer.updatedAt ? new Date(storedBuyer.updatedAt * 1000) : new Date(),
+      owner: {
+        id: session.user?.id || 'unknown',
+        name: session.user?.name || 'Unknown User',
+        email: session.user?.email || 'unknown@example.com',
+      },
+    };
 
-  // For now, provide empty history (no database operations)
-  const history: any[] = [];
+    // For now, provide empty history (no database operations)
+    const history: any[] = [];
 
-  const canEdit = buyer.owner?.id === session.user.id || session.user.isAdmin;
-  const isEditing = edit === 'true' && canEdit;
+    const canEdit = buyer.owner?.id === session.user?.id || session.user?.isAdmin || false;
+    const isEditing = edit === 'true' && canEdit;
 
   return (
     <MainLayout>
@@ -104,4 +112,9 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
       </div>
     </MainLayout>
   );
+  
+  } catch (error) {
+    console.error('🚨 Error in BuyerPage:', error);
+    notFound();
+  }
 }
