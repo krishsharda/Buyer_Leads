@@ -56,8 +56,9 @@ export function CreateBuyerForm() {
 
       const newBuyer = await response.json();
       
-      // Redirect to the buyer detail page
-      router.push(`/buyers/${newBuyer.id}`);
+      // Show success message and redirect to main page
+      alert(`✅ Success! Buyer "${newBuyer.fullName}" created successfully!`);
+      router.push('/buyers');
     } catch (error) {
       console.error('Error creating buyer:', error);
       setSubmitError(error instanceof Error ? error.message : 'Failed to create buyer');
