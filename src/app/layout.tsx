@@ -14,8 +14,45 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Buyer Lead Management",
-  description: "Manage and track buyer leads efficiently",
+  title: "PropertyLead Pro - Real Estate Lead Management",
+  description: "Professional buyer lead management system for real estate agents. Track, manage, and convert property leads with advanced filtering, budget tracking, and timeline management.",
+  keywords: "real estate, lead management, property leads, buyer leads, CRM, real estate software",
+  authors: [{ name: "PropertyLead Pro Team" }],
+  creator: "PropertyLead Pro",
+  publisher: "PropertyLead Pro",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    title: "PropertyLead Pro - Real Estate Lead Management",
+    description: "Professional buyer lead management system for real estate agents",
+    url: "https://buyerleads-production.up.railway.app",
+    siteName: "PropertyLead Pro",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PropertyLead Pro - Real Estate Lead Management",
+    description: "Professional buyer lead management system for real estate agents",
+    creator: "@propertyleadpro",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "your-google-verification-code",
+  },
 };
 
 export default function RootLayout({
