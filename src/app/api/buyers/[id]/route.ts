@@ -19,41 +19,41 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
 
-    const [buyer] = await db
-      .select({
-        id: buyers.id,
-        fullName: buyers.fullName,
-        email: buyers.email,
-        phone: buyers.phone,
-        city: buyers.city,
-        propertyType: buyers.propertyType,
-        bhk: buyers.bhk,
-        purpose: buyers.purpose,
-        budgetMin: buyers.budgetMin,
-        budgetMax: buyers.budgetMax,
-        timeline: buyers.timeline,
-        source: buyers.source,
-        status: buyers.status,
-        notes: buyers.notes,
-        tags: buyers.tags,
-        createdAt: buyers.createdAt,
-        updatedAt: buyers.updatedAt,
-        owner: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
-        },
-      })
-      .from(buyers)
-      .leftJoin(users, eq(buyers.ownerId, users.id))
-      .where(eq(buyers.id, id))
-      .limit(1);
+    // STATIC SOLUTION: Get buyer from in-memory store
+    const { getBuyerById } = await import('@/lib/buyers-store');
+    const buyer = getBuyerById(id);
 
     if (!buyer) {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
     }
 
-    return NextResponse.json(buyer);
+    // Format buyer to match expected structure
+    const formattedBuyer = {
+      id: buyer.id,
+      fullName: buyer.fullName,
+      email: buyer.email,
+      phone: buyer.phone,
+      city: buyer.city,
+      propertyType: buyer.propertyType,
+      bhk: buyer.bhk,
+      purpose: buyer.purpose,
+      budgetMin: buyer.budgetMin,
+      budgetMax: buyer.budgetMax,
+      timeline: buyer.timeline,
+      source: buyer.source,
+      status: buyer.status,
+      notes: buyer.notes,
+      tags: buyer.tags,
+      createdAt: buyer.createdAt,
+      updatedAt: buyer.updatedAt,
+      owner: {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      },
+    };
+
+    return NextResponse.json(formattedBuyer);
   } catch (error) {
     console.error('Error fetching buyer:', error);
     return NextResponse.json(
@@ -76,12 +76,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     // Validate the input
     const validatedData = updateBuyerSchema.parse(body);
 
-    // Check if the buyer exists and get current data
-    const [existingBuyer] = await db
-      .select()
-      .from(buyers)
-      .where(eq(buyers.id, id))
-      .limit(1);
+    // STATIC SOLUTION: Update buyer in in-memory store
+    const { getBuyerById, updateBuyer } = await import('@/lib/buyers-store');
+    const existingBuyer = getBuyerById(id);
 
     if (!existingBuyer) {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
@@ -92,73 +89,51 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Check for concurrency conflicts
-    if (validatedData.updatedAt && existingBuyer.updatedAt.getTime() / 1000 > validatedData.updatedAt) {
-      return NextResponse.json(
-        { error: 'Record has been modified by another user. Please refresh and try again.' },
-        { status: 409 }
-      );
-    }
-
-    // Calculate the changes for history tracking
-    const changes: Record<string, { old: any; new: any }> = {};
-    const fieldsToTrack = [
-      'fullName', 'email', 'phone', 'city', 'propertyType', 'bhk',
-      'purpose', 'budgetMin', 'budgetMax', 'timeline', 'source', 'status', 'notes'
-    ];
-
-    fieldsToTrack.forEach(field => {
-      const oldValue = (existingBuyer as any)[field];
-      const newValue = (validatedData as any)[field];
-      
-      if (oldValue !== newValue) {
-        changes[field] = { old: oldValue, new: newValue };
-      }
+    // Update the buyer in the store
+    const updatedBuyer = updateBuyer(id, {
+      fullName: validatedData.fullName,
+      email: validatedData.email,
+      phone: validatedData.phone,
+      city: validatedData.city,
+      propertyType: validatedData.propertyType,
+      bhk: validatedData.bhk,
+      purpose: validatedData.purpose,
+      budgetMin: validatedData.budgetMin,
+      budgetMax: validatedData.budgetMax,
+      timeline: validatedData.timeline,
+      source: validatedData.source,
+      status: validatedData.status,
+      notes: validatedData.notes,
+      tags: validatedData.tags || [],
     });
 
-    // Check if tags changed
-    const oldTags = existingBuyer.tags || [];
-    const newTags = validatedData.tags || [];
-    if (JSON.stringify(oldTags.sort()) !== JSON.stringify(newTags.sort())) {
-      changes.tags = { old: oldTags, new: newTags };
-    }
+    // Format response to match expected structure
+    const response = {
+      id: updatedBuyer.id,
+      fullName: updatedBuyer.fullName,
+      email: updatedBuyer.email,
+      phone: updatedBuyer.phone,
+      city: updatedBuyer.city,
+      propertyType: updatedBuyer.propertyType,
+      bhk: updatedBuyer.bhk,
+      purpose: updatedBuyer.purpose,
+      budgetMin: updatedBuyer.budgetMin,
+      budgetMax: updatedBuyer.budgetMax,
+      timeline: updatedBuyer.timeline,
+      source: updatedBuyer.source,
+      status: updatedBuyer.status,
+      notes: updatedBuyer.notes,
+      tags: updatedBuyer.tags,
+      createdAt: updatedBuyer.createdAt,
+      updatedAt: updatedBuyer.updatedAt,
+      owner: {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      },
+    };
 
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    // Update the buyer
-    const [updatedBuyer] = await db
-      .update(buyers)
-      .set({
-        fullName: validatedData.fullName,
-        email: validatedData.email || null,
-        phone: validatedData.phone,
-        city: validatedData.city,
-        propertyType: validatedData.propertyType,
-        bhk: validatedData.bhk || null,
-        purpose: validatedData.purpose,
-        budgetMin: validatedData.budgetMin || null,
-        budgetMax: validatedData.budgetMax || null,
-        timeline: validatedData.timeline,
-        source: validatedData.source,
-        status: validatedData.status,
-        notes: validatedData.notes || null,
-        tags: validatedData.tags || [],
-        updatedAt: new Date(currentTime),
-      })
-      .where(eq(buyers.id, id))
-      .returning();
-
-    // Log the changes if there are any
-    if (Object.keys(changes).length > 0) {
-      await db.insert(buyerHistory).values({
-        buyerId: id,
-        changedBy: session.user.id,
-        changedAt: new Date(),
-        diff: changes,
-      });
-    }
-
-    return NextResponse.json(updatedBuyer);
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('Error updating buyer:', error);
@@ -186,12 +161,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const { id } = await context.params;
 
-    // Check if the buyer exists
-    const [existingBuyer] = await db
-      .select()
-      .from(buyers)
-      .where(eq(buyers.id, id))
-      .limit(1);
+    // STATIC SOLUTION: Delete buyer from in-memory store
+    const { getBuyerById, deleteBuyer } = await import('@/lib/buyers-store');
+    const existingBuyer = getBuyerById(id);
 
     if (!existingBuyer) {
       return NextResponse.json({ error: 'Buyer not found' }, { status: 404 });
@@ -202,11 +174,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete buyer history first (due to foreign key constraints)
-    await db.delete(buyerHistory).where(eq(buyerHistory.buyerId, id));
-
-    // Delete the buyer
-    await db.delete(buyers).where(eq(buyers.id, id));
+    // Delete the buyer from store
+    const deleted = deleteBuyer(id);
+    
+    if (!deleted) {
+      return NextResponse.json({ error: 'Failed to delete buyer' }, { status: 500 });
+    }
 
     return NextResponse.json({ message: 'Buyer deleted successfully' });
 

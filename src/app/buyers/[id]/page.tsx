@@ -21,58 +21,42 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const { id } = await params;
   const { edit } = await searchParams;
   
-  // Fetch buyer with owner details
-  const [buyer] = await db
-    .select({
-      id: buyers.id,
-      fullName: buyers.fullName,
-      email: buyers.email,
-      phone: buyers.phone,
-      city: buyers.city,
-      propertyType: buyers.propertyType,
-      bhk: buyers.bhk,
-      purpose: buyers.purpose,
-      budgetMin: buyers.budgetMin,
-      budgetMax: buyers.budgetMax,
-      timeline: buyers.timeline,
-      source: buyers.source,
-      status: buyers.status,
-      notes: buyers.notes,
-      tags: buyers.tags,
-      createdAt: buyers.createdAt,
-      updatedAt: buyers.updatedAt,
-      owner: {
-        id: users.id,
-        name: users.name,
-        email: users.email,
-      },
-    })
-    .from(buyers)
-    .leftJoin(users, eq(buyers.ownerId, users.id))
-    .where(eq(buyers.id, id))
-    .limit(1);
+  // STATIC SOLUTION: Get buyer from in-memory store
+  const { getBuyerById } = await import('@/lib/buyers-store');
+  const storedBuyer = getBuyerById(id);
 
-  if (!buyer) {
+  if (!storedBuyer) {
     notFound();
   }
 
-  // Get recent history
-  const history = await db
-    .select({
-      id: buyerHistory.id,
-      changedAt: buyerHistory.changedAt,
-      diff: buyerHistory.diff,
-      changedBy: {
-        id: users.id,
-        name: users.name,
-        email: users.email,
-      },
-    })
-    .from(buyerHistory)
-    .leftJoin(users, eq(buyerHistory.changedBy, users.id))
-    .where(eq(buyerHistory.buyerId, id))
-    .orderBy(desc(buyerHistory.changedAt))
-    .limit(10);
+  // Format buyer to match expected structure
+  const buyer = {
+    id: storedBuyer.id,
+    fullName: storedBuyer.fullName,
+    email: storedBuyer.email,
+    phone: storedBuyer.phone,
+    city: storedBuyer.city,
+    propertyType: storedBuyer.propertyType,
+    bhk: storedBuyer.bhk,
+    purpose: storedBuyer.purpose,
+    budgetMin: storedBuyer.budgetMin,
+    budgetMax: storedBuyer.budgetMax,
+    timeline: storedBuyer.timeline,
+    source: storedBuyer.source,
+    status: storedBuyer.status,
+    notes: storedBuyer.notes,
+    tags: storedBuyer.tags,
+    createdAt: storedBuyer.createdAt,
+    updatedAt: storedBuyer.updatedAt,
+    owner: {
+      id: session.user.id,
+      name: session.user.name,
+      email: session.user.email,
+    },
+  };
+
+  // For now, provide empty history (no database operations)
+  const history: any[] = [];
 
   const canEdit = buyer.owner?.id === session.user.id || session.user.isAdmin;
   const isEditing = edit === 'true' && canEdit;
