@@ -189,6 +189,13 @@ export async function POST(request: NextRequest) {
   try {
     console.log('=== BUYER CREATION START ===');
     
+    // Step 0: Initialize database in production
+    if (process.env.NODE_ENV === 'production') {
+      console.log('Step 0: Initializing database for production...');
+      await initDatabase();
+      console.log('✅ Database initialized');
+    }
+    
     // Step 1: Check authentication
     console.log('Step 1: Checking authentication...');
     const session = await auth();
@@ -248,11 +255,18 @@ export async function POST(request: NextRequest) {
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     console.error('Full error object:', error);
     
+    // Return detailed error information to help debug
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.constructor.name : typeof error,
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5).join('\n') : 'No stack',
+    };
+    
     return NextResponse.json(
       { 
-        error: 'Failed to create buyer', 
-        details: error instanceof Error ? error.message : 'Unknown error',
-        errorType: error instanceof Error ? error.constructor.name : typeof error
+        error: `DETAILED ERROR: ${errorDetails.type} - ${errorDetails.message}`,
+        details: errorDetails,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     );
