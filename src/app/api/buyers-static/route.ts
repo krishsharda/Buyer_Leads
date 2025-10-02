@@ -24,11 +24,11 @@ export async function POST(request: NextRequest) {
       body = {};
     }
 
-    // Generate a completely fake but realistic buyer response
-    const fakeBuyer = {
-      id: `static_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    // Create buyer object with submitted data
+    const newBuyer = {
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       fullName: body.fullName || 'New Buyer',
-      email: body.email || 'buyer@example.com',
+      email: body.email || null,
       phone: body.phone || '0000000000',
       city: body.city || 'Chandigarh',
       propertyType: body.propertyType || 'Apartment',
@@ -48,10 +48,14 @@ export async function POST(request: NextRequest) {
       updatedAt: Math.floor(Date.now() / 1000),
     };
 
-    console.log('✅ Returning fake buyer:', fakeBuyer);
+    // Add to in-memory store so it appears in main dashboard
+    const { addBuyer } = await import('@/lib/buyers-store');
+    const savedBuyer = addBuyer(newBuyer);
 
-    // Always return success - no database operations
-    return NextResponse.json(fakeBuyer, { status: 201 });
+    console.log('✅ Buyer added to store:', savedBuyer);
+
+    // Return success with the created buyer
+    return NextResponse.json(savedBuyer, { status: 201 });
 
   } catch (error) {
     console.error('🔥 Even the static API failed, returning emergency response:', error);

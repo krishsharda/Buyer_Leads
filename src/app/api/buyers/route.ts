@@ -32,6 +32,46 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // STATIC SOLUTION: Return buyers from in-memory store
+    const { getAllBuyers } = await import('@/lib/buyers-store');
+    const storedBuyers = getAllBuyers();
+    
+    // Format buyers to match expected structure
+    const formattedBuyers = storedBuyers.map(buyer => ({
+      id: buyer.id,
+      fullName: buyer.fullName,
+      email: buyer.email,
+      phone: buyer.phone,
+      city: buyer.city,
+      propertyType: buyer.propertyType,
+      bhk: buyer.bhk,
+      purpose: buyer.purpose,
+      budgetMin: buyer.budgetMin,
+      budgetMax: buyer.budgetMax,
+      timeline: buyer.timeline,
+      source: buyer.source,
+      status: buyer.status,
+      notes: buyer.notes,
+      tags: buyer.tags,
+      createdAt: buyer.createdAt,
+      updatedAt: buyer.updatedAt,
+      owner: {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      },
+    }));
+
+    return NextResponse.json({
+      buyers: formattedBuyers,
+      totalCount: formattedBuyers.length,
+      currentPage: 1,
+      totalPages: 1,
+      filters: {},
+    });
+
+    // ORIGINAL DATABASE CODE COMMENTED OUT FOR NOW
+    /*
     const { searchParams } = new URL(request.url);
     const params = Object.fromEntries(searchParams.entries());
     
@@ -166,6 +206,7 @@ export async function GET(request: NextRequest) {
       totalPages,
       filters,
     });
+    */
 
   } catch (error) {
     console.error('Error fetching buyers:', error);
