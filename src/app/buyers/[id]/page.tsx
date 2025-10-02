@@ -21,11 +21,19 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
   const { id } = await params;
   const { edit } = await searchParams;
   
+  console.log(' Looking for buyer with ID:', id);
+  
   // STATIC SOLUTION: Get buyer from in-memory store
-  const { getBuyerById } = await import('@/lib/buyers-store');
+  const { getBuyerById, getAllBuyers } = await import('@/lib/buyers-store');
   const storedBuyer = getBuyerById(id);
+  
+  // Debug logging
+  const allBuyers = getAllBuyers();
+  console.log('📊 Available buyers:', allBuyers.map(b => ({ id: b.id, name: b.fullName })));
+  console.log('🎯 Found buyer:', storedBuyer ? storedBuyer.fullName : 'NOT FOUND');
 
   if (!storedBuyer) {
+    console.log('❌ Buyer not found, calling notFound()');
     notFound();
   }
 
@@ -46,8 +54,8 @@ export default async function BuyerPage({ params, searchParams }: BuyerPageProps
     status: storedBuyer.status,
     notes: storedBuyer.notes,
     tags: storedBuyer.tags,
-    createdAt: storedBuyer.createdAt,
-    updatedAt: storedBuyer.updatedAt,
+    createdAt: new Date(storedBuyer.createdAt * 1000), // Convert Unix timestamp to Date
+    updatedAt: new Date(storedBuyer.updatedAt * 1000), // Convert Unix timestamp to Date
     owner: {
       id: session.user.id,
       name: session.user.name,
